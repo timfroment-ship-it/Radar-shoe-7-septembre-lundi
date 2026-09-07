@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080a0c">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Brocante Radar V12</title>
+<style>
+:root{
+  --bg:#080a0c;--glass:rgba(10,12,14,.76);--line:rgba(255,255,255,.17);
+  --txt:#fff;--muted:rgba(255,255,255,.68);--green:#65df8c;--amber:#ffc85a;--red:#ff7373;
+}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,-apple-system,sans-serif;height:100%;overflow:hidden}
+button,input,select{font:inherit}
+#app{position:relative;width:100%;height:100dvh;overflow:hidden;background:#050607}
+video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+canvas{pointer-events:none}
+.hidden{display:none!important}
+.start{
+  position:absolute;inset:0;z-index:20;display:grid;align-content:center;justify-items:center;text-align:center;
+  padding:25px;background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.08),transparent 35%),#080a0c
+}
+.eyebrow{font-size:.72rem;letter-spacing:.15em;font-weight:900;color:var(--muted);margin:0}
+.start h1{font-size:clamp(2.4rem,10vw,4.5rem);line-height:.94;letter-spacing:-.055em;max-width:760px;margin:10px 0 17px}
+.start .desc{max-width:620px;color:var(--muted);line-height:1.52;margin:0}
+.bigbtn{border:0;border-radius:18px;background:#fff;color:#111;min-height:58px;padding:0 25px;font-weight:900;margin-top:22px}
+.status{max-width:600px;margin:14px 0 0;color:var(--muted);font-size:.82rem;line-height:1.45}
+.status.ok{color:#8de6aa}.status.err{color:#ff9898;font-weight:800}
+.top{
+  position:absolute;z-index:10;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;
+  border:1px solid var(--line);border-radius:16px;background:var(--glass);backdrop-filter:blur(15px);
+  display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px
+}
+.top .left{display:grid;grid-template-columns:auto 1fr;gap:2px 7px;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--amber);box-shadow:0 0 0 4px rgba(255,200,90,.17)}
+.dot.live{background:var(--green);box-shadow:0 0 0 4px rgba(101,223,140,.17)}
+.dot.err{background:var(--red)}
+.top small{grid-column:2;color:var(--muted);max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actions{display:flex;gap:6px}
+.smallbtn{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;min-height:38px;padding:0 10px;font-weight:800}
+.alert{
+  position:absolute;z-index:12;left:50%;top:29%;transform:translate(-50%,-50%);
+  width:min(90vw,520px);padding:16px;border:2px solid var(--green);border-radius:20px;
+  background:rgba(7,15,10,.92);backdrop-filter:blur(15px);text-align:center;box-shadow:0 16px 70px rgba(0,0,0,.45)
+}
+.alert.generic{border-color:var(--amber);background:rgba(22,17,6,.93)}
+.alert span{font-size:.68rem;letter-spacing:.14em;font-weight:900;color:var(--green)}
+.alert.generic span{color:var(--amber)}
+.alert strong{display:block;font-size:clamp(1.8rem,8vw,3.2rem);letter-spacing:-.05em;line-height:.95;margin:5px 0}
+.alert small{color:var(--muted)}
+.bottom{
+  position:absolute;z-index:10;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));
+  border:1px solid var(--line);border-radius:17px;background:var(--glass);backdrop-filter:blur(15px);padding:9px
+}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr)}
+.kpis>div{padding:6px 8px;border-right:1px solid var(--line)}.kpis>div:last-child{border-right:0}
+.kpis span{display:block;color:var(--muted);font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+.kpis strong{display:block;margin-top:2px;font-size:.9rem}
+.recent{display:flex;overflow-x:auto;gap:6px;padding-top:8px}
+.pill{flex:0 0 auto;border:1px solid rgba(101,223,140,.45);border-radius:999px;padding:6px 9px;background:rgba(101,223,140,.11);font-size:.72rem;font-weight:800}
+.pill.generic{border-color:rgba(255,200,90,.45);background:rgba(255,200,90,.11)}
+.empty{color:var(--muted);font-size:.75rem;padding:6px}
+.retry{
+  position:absolute;z-index:11;left:50%;bottom:145px;transform:translateX(-50%);
+  border:1px solid var(--line);border-radius:13px;background:var(--glass);color:#fff;padding:10px 14px;font-weight:850
+}
+dialog{width:min(680px,calc(100% - 18px));max-height:88dvh;border:1px solid var(--line);border-radius:20px;background:#14171a;color:white;padding:0}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+.panel{padding:17px;overflow:auto;max-height:88dvh}
+.head{display:flex;justify-content:space-between;gap:10px;align-items:start}.head h2{margin:3px 0}.close{border:1px solid var(--line);background:transparent;color:#fff;border-radius:10px;min-height:38px;padding:0 10px}
+.group{border-top:1px solid var(--line);margin-top:13px;padding-top:13px}.group h3{margin:0 0 8px;font-size:.9rem}
+.group label{display:flex;align-items:center;gap:8px;margin:8px 0}.group input[type=checkbox]{width:18px;height:18px}
+.range{display:grid!important;gap:6px!important;font-size:.84rem;font-weight:800}.range span{color:var(--muted);font-weight:600}
+select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:11px;background:#0d1012;color:#fff;padding:0 10px}
+.note{color:var(--muted);font-size:.77rem;line-height:1.45}
+@media(max-width:560px){.kpis{grid-template-columns:1fr 1fr}.kpis>div:nth-child(2){border-right:0}.kpis>div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+
+.debugBox{position:absolute;z-index:11;left:10px;right:10px;top:84px;border:1px solid var(--line);border-radius:14px;background:var(--glass);backdrop-filter:blur(15px);padding:9px}.debugBox>strong{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}.debugRows{display:flex;gap:6px;overflow-x:auto}.debugPill{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;padding:5px 8px;font-size:.7rem}.debugPill.best{border-color:rgba(124,183,255,.75);background:rgba(124,183,255,.13)}.testTools{position:absolute;z-index:11;left:50%;bottom:148px;transform:translateX(-50%);display:flex;gap:7px;white-space:nowrap}
+</style>
+
+<script>
+(async () => {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if ("caches" in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map(n => caches.delete(n)));
+    }
+  } catch (e) {
+    console.warn("Nettoyage ancien cache impossible", e);
+  }
+})();
+</script>
+
+</head>
+<body>
+<main id="app">
+  <video id="video" playsinline muted></video>
+  <canvas id="overlay"></canvas>
+  <canvas id="work" class="hidden"></canvas>
+
+  <section id="startScreen" class="start">
+    <p class="eyebrow">BROCANTE RADAR · V12</p>
+    <h1>Détection plus sensible.<br>Scores visibles.</h1>
+    <p class="desc">V12 fait deux analyses par zone : d’abord “outdoor ou non”, puis uniquement la marque. Elle affiche aussi les meilleurs scores pour régler le radar au lieu de travailler à l’aveugle.</p>
+    <button id="startBtn" class="bigbtn">Démarrer la caméra</button>
+    <p id="startupStatus" class="status">Prêt. Après le clic, Chrome doit demander l’autorisation caméra immédiatement.</p>
+  </section>
+
+  <header id="top" class="top hidden">
+    <div class="left">
+      <span id="dot" class="dot"></span>
+      <strong id="state">CAMÉRA</strong>
+      <small id="detail">préparation…</small>
+    </div>
+    <div class="actions">
+      <button id="pauseBtn" class="smallbtn">Pause</button>
+      <button id="settingsBtn" class="smallbtn">Réglages</button>
+    </div>
+  </header>
+
+  <section id="alert" class="alert hidden">
+    <span id="alertKind">CIBLE</span>
+    <strong id="alertName">—</strong>
+    <small id="alertInfo">—</small>
+  </section>
+
+  <button id="retryAi" class="retry hidden">Réessayer l’IA</button>
+  <section id="debugBox" class="debugBox hidden"><strong>Ce que voit l’IA</strong><div id="debugRows" class="debugRows"></div></section>
+  <div id="testTools" class="testTools hidden"><button id="testCenter" class="smallbtn">Tester le centre</button><button id="toggleDebug" class="smallbtn">Debug ON</button></div>
+
+  <section id="bottom" class="bottom hidden">
+    <div class="kpis">
+      <div><span>cycle</span><strong id="cycle">0</strong></div>
+      <div><span>zone</span><strong id="zone">—</strong></div>
+      <div><span>analyse</span><strong id="time">—</strong></div>
+      <div><span>alertes</span><strong id="alerts">0</strong></div>
+    </div>
+    <div id="recent" class="recent"><span class="empty">Aucune cible confirmée.</span></div>
+  </section>
+
+  <dialog id="settings">
+    <form method="dialog" class="panel">
+      <div class="head"><div><p class="eyebrow">RÉGLAGES</p><h2>Radar V12</h2></div><button class="close" value="close">Fermer</button></div>
+
+      <div class="group">
+        <h3>Marques surveillées</h3>
+        <label><input class="brand" type="checkbox" value="salomon" checked> Salomon</label>
+        <label><input class="brand" type="checkbox" value="merrell" checked> Merrell</label>
+        <label><input class="brand" type="checkbox" value="hoka" checked> Hoka</label>
+        <label><input class="brand" type="checkbox" value="la sportiva" checked> La Sportiva</label>
+        <label><input class="brand" type="checkbox" value="adidas terrex" checked> Adidas Terrex</label>
+        <label><input class="brand" type="checkbox" value="scarpa" checked> Scarpa</label>
+      </div>
+
+      <div class="group">
+        <label><input id="generic" type="checkbox" checked> Signaler aussi randonnée / trail sans marque reconnue</label>
+      </div>
+
+      <div class="group">
+        <label class="range">Seuil “chaussure outdoor”
+          <input id="outdoorThreshold" type="range" min="0.30" max="0.75" step="0.02" value="0.42">
+          <span id="outdoorOut">0,42</span>
+        </label>
+        <label class="range">Score marque relatif
+          <input id="brandThreshold" type="range" min="0.15" max="0.50" step="0.01" value="0.20">
+          <span id="brandOut">0,20</span>
+        </label>
+        <label class="range">Écart marque / 2e choix
+          <input id="margin" type="range" min="0.00" max="0.20" step="0.01" value="0.02">
+          <span id="marginOut">0,02</span>
+        </label>
+      </div>
+
+      <div class="group">
+        <label>Mode de balayage
+          <select id="scanMode">
+            <option value="center" selected>Centre + zooms — recommandé</option>
+            <option value="grid">Grille complète — plus lent</option>
+          </select>
+        </label>
+        <label>Confirmation
+          <select id="confirm">
+            <option value="1" selected>1 passage — test / réglage</option>
+            <option value="2">2 passages — recommandé ensuite</option>
+            <option value="3">3 passages — prudent</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="group">
+        <label><input id="sound" type="checkbox" checked> Bip</label>
+        <label><input id="vibration" type="checkbox" checked> Vibration si disponible</label>
+        <label><input id="boxes" type="checkbox" checked> Afficher les zones analysées</label>
+        <label><input id="debugAlways" type="checkbox"> Toujours afficher les scores</label>
+      </div>
+
+      <div class="group"><p class="note">V12 garde MobileCLIP mais sépare la question “outdoor ?” de la question “quelle marque ?”. Commence avec confirmation 1 et utilise Tester le centre sur une Merrell connue. Si Merrell apparaît dans les scores mais ne sonne pas, baisse simplement les seuils.</p></div>
+    </form>
+  </dialog>
+</main>
+
+<script>
+(()=>{
+"use strict";
+const $=id=>document.getElementById(id), video=$("video"), overlay=$("overlay"), octx=overlay.getContext("2d"), work=$("work"), wctx=work.getContext("2d",{willReadFrequently:true});
+let stream=null,classifier=null,pipelineFn=null,running=false,paused=false,aiLoading=false,cycle=0,alertCount=0,regionCursor=0,timer=null,audioCtx=null,currentRect=null,debugOn=false;
+const streaks=new Map(),lastAlert=new Map(),recent=[]; const COOLDOWN=5500;
+const BRANDS=[
+ {key:"salomon",label:"SALOMON",prompt:"Salomon trail running shoe"},
+ {key:"merrell",label:"MERRELL",prompt:"Merrell hiking shoe"},
+ {key:"hoka",label:"HOKA",prompt:"Hoka trail running shoe"},
+ {key:"la sportiva",label:"LA SPORTIVA",prompt:"La Sportiva trail shoe"},
+ {key:"adidas terrex",label:"ADIDAS TERREX",prompt:"Adidas Terrex hiking shoe"},
+ {key:"scarpa",label:"SCARPA",prompt:"Scarpa hiking shoe"}
+];
+const GATE=[
+ {key:"outdoor",label:"outdoor",prompt:"technical hiking or trail running shoe"},
+ {key:"casual",label:"casual",prompt:"ordinary casual sneaker"},
+ {key:"clothes",label:"clothes",prompt:"clothes or garments"},
+ {key:"bag",label:"bag",prompt:"bag or backpack"},
+ {key:"objects",label:"objects",prompt:"miscellaneous flea market objects or table"}
+];
+function status(t,c=""){const e=$("startupStatus");e.textContent=t;e.className=`status ${c}`.trim()}
+function setState(a,b,k=""){ $("state").textContent=a;$("detail").textContent=b;$("dot").className=`dot ${k}`.trim() }
+function prefs(){return{brands:new Set([...document.querySelectorAll(".brand:checked")].map(x=>x.value)),generic:$("generic").checked,outdoor:Number($("outdoorThreshold").value),brand:Number($("brandThreshold").value),margin:Number($("margin").value),scanMode:$("scanMode").value,confirm:Number($("confirm").value),sound:$("sound").checked,vibration:$("vibration").checked,boxes:$("boxes").checked,debug:$("debugAlways").checked}}
+function savePrefs(){const x=prefs();localStorage.setItem("brocante-radar-v12",JSON.stringify({...x,brands:[...x.brands]}))}
+function loadPrefs(){try{const x=JSON.parse(localStorage.getItem("brocante-radar-v12")||"null");if(x){document.querySelectorAll(".brand").forEach(b=>b.checked=x.brands?.includes(b.value)??true);for(const [id,key] of [["generic","generic"],["outdoorThreshold","outdoor"],["brandThreshold","brand"],["margin","margin"],["scanMode","scanMode"],["confirm","confirm"],["sound","sound"],["vibration","vibration"],["boxes","boxes"],["debugAlways","debug"]])if(key in x)$(id).type==="checkbox"?$(id).checked=x[key]:$(id).value=x[key]}}catch{} updateOutputs()}
+function updateOutputs(){$("outdoorOut").textContent=Number($("outdoorThreshold").value).toFixed(2).replace(".",",");$("brandOut").textContent=Number($("brandThreshold").value).toFixed(2).replace(".",",");$("marginOut").textContent=Number($("margin").value).toFixed(2).replace(".",",")}
+async function ensureAudio(){if(audioCtx)return;try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();await audioCtx.resume()}catch{}}
+function beep(priority){if(!prefs().sound||!audioCtx)return;try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=priority?1150:760;g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(priority?.20:.10,audioCtx.currentTime+.015);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.22);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.24)}catch{}}
+function vibrate(priority){if(prefs().vibration&&navigator.vibrate)navigator.vibrate(priority?[120,55,150]:85)}
+async function loadLibrary(){if(pipelineFn)return;let last;for(const url of["https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0","https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1"]){try{const m=await import(url);if(typeof m.pipeline!=="function")throw Error("pipeline absente");pipelineFn=m.pipeline;return}catch(e){last=e;console.warn(e)}}throw last}
+async function loadAi(){if(classifier||aiLoading)return;aiLoading=true;$("retryAi").classList.add("hidden");try{await loadLibrary();setState("IA","chargement MobileCLIP");classifier=await pipelineFn("zero-shot-image-classification","Xenova/mobileclip_s0");setState("RADAR ACTIF","prêt","live");status("IA prête.","ok");schedule(100)}catch(e){console.error(e);setState("CAMÉRA OK / IA KO","Réessayer IA","err");status("Caméra OK mais IA KO : "+String(e?.message||e).slice(0,120),"err");$("retryAi").classList.remove("hidden")}finally{aiLoading=false}}
+function resize(){const r=video.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);overlay.width=Math.round(r.width*d);overlay.height=Math.round(r.height*d);octx.setTransform(d,0,0,d,0,0);drawRect()}
+function regions(){return prefs().scanMode==="grid"?[{id:"HG",x:0,y:0,w:.58,h:.58},{id:"HD",x:.42,y:0,w:.58,h:.58},{id:"BG",x:0,y:.42,w:.58,h:.58},{id:"BD",x:.42,y:.42,w:.58,h:.58}]:[{id:"CENTRE",x:.16,y:.13,w:.68,h:.72},{id:"ZOOM",x:.27,y:.23,w:.46,h:.54},{id:"HAUT",x:.10,y:.01,w:.80,h:.58},{id:"BAS",x:.10,y:.41,w:.80,h:.58}]}
+function nextRegion(){const a=regions(),r=a[regionCursor%a.length];regionCursor=(regionCursor+1)%a.length;return r}
+function capture(r){const vw=video.videoWidth,vh=video.videoHeight;if(!vw||!vh)return null;const sx=Math.round(r.x*vw),sy=Math.round(r.y*vh),sw=Math.round(r.w*vw),sh=Math.round(r.h*vh),mx=384,s=Math.min(1,mx/Math.max(sw,sh));work.width=Math.max(1,Math.round(sw*s));work.height=Math.max(1,Math.round(sh*s));wctx.drawImage(video,sx,sy,sw,sh,0,0,work.width,work.height);return work.toDataURL("image/jpeg",.82)}
+function mapRect(r){const vw=video.videoWidth,vh=video.videoHeight,vr=video.getBoundingClientRect(),va=vw/vh,sa=vr.width/vr.height;let dw,dh,ox,oy;if(va>sa){dh=vr.height;dw=dh*va;ox=(vr.width-dw)/2;oy=0}else{dw=vr.width;dh=dw/va;ox=0;oy=(vr.height-dh)/2}return{x:ox+r.x*dw,y:oy+r.y*dh,w:r.w*dw,h:r.h*dh}}
+function drawRect(){const vr=video.getBoundingClientRect();octx.clearRect(0,0,vr.width,vr.height);if(!prefs().boxes||!currentRect)return;const b=mapRect(currentRect);octx.strokeStyle="#7cb7ff";octx.lineWidth=3;octx.strokeRect(b.x,b.y,b.w,b.h);octx.fillStyle="#7cb7ff";octx.font="700 13px system-ui";octx.fillText(currentRect.id,b.x+5,b.y+18)}
+async function classify(img,classes){const map=new Map(classes.map(x=>[x.prompt,x]));const out=await classifier(img,classes.map(x=>x.prompt));return out.map(x=>({...x,meta:map.get(x.label)})).filter(x=>x.meta).sort((a,b)=>b.score-a.score)}
+function brandClasses(){const a=BRANDS.filter(b=>prefs().brands.has(b.key));a.push({key:"other",label:"AUTRE OUTDOOR",prompt:"another brand of technical hiking or trail shoe"});return a}
+function renderDebug(gate,brands){const w=$("debugRows");w.innerHTML="";const rows=[...gate.slice(0,2).map(x=>({name:x.meta.label,score:x.score})),...brands.slice(0,4).map(x=>({name:x.meta.label,score:x.score}))];rows.forEach((x,i)=>{const s=document.createElement("span");s.className=`debugPill ${i===0?"best":""}`;s.textContent=`${x.name}: ${Math.round(x.score*100)}%`;w.appendChild(s)});$("debugBox").classList.toggle("hidden",!(debugOn||prefs().debug))}
+async function analyze(r){const img=capture(r);if(!img)return null;const gate=await classify(img,GATE),brands=await classify(img,brandClasses());renderDebug(gate,brands);const outdoor=gate.find(x=>x.meta.key==="outdoor"),gt=gate[0],best=brands[0],second=brands[1];return{outdoorScore:outdoor?.score||0,gateTop:gt?.meta.key||"",key:best?.meta.key||"",label:best?.meta.label||"",kind:best?.meta.key==="other"?"generic":"brand",brandScore:best?.score||0,margin:(best?.score||0)-(second?.score||0),second:second?.meta.label||""}}
+function qualifies(x){if(!x)return false;const q=prefs(),outdoorOK=x.gateTop==="outdoor"||x.outdoorScore>=q.outdoor;if(x.kind==="generic")return q.generic&&outdoorOK&&x.brandScore>=Math.max(.16,q.brand-.04);return outdoorOK&&x.brandScore>=q.brand&&x.margin>=q.margin}
+function stable(r,x){const k=`${r.id}:${x.key}`;if(!qualifies(x)){streaks.set(k,0);return false}const n=(streaks.get(k)||0)+1;streaks.set(k,n);return n>=prefs().confirm}
+function fire(x){const now=Date.now();if(now-(lastAlert.get(x.key)||0)<COOLDOWN)return;lastAlert.set(x.key,now);alertCount++;$("alerts").textContent=alertCount;const e=$("alert");e.className=`alert ${x.kind==="generic"?"generic":""}`;$("alertKind").textContent=x.kind==="brand"?"MARQUE PROBABLE":"OUTDOOR PROBABLE";$("alertName").textContent=x.kind==="brand"?`${x.label} PROBABLE`:"RANDO / TRAIL";$("alertInfo").textContent=`marque ${Math.round(x.brandScore*100)}% · outdoor ${Math.round(x.outdoorScore*100)}% · écart ${Math.round(x.margin*100)} pts`;e.classList.remove("hidden");beep(x.kind==="brand");vibrate(x.kind==="brand");clearTimeout(fire.t);fire.t=setTimeout(()=>e.classList.add("hidden"),1900);recent.unshift(x);while(recent.length>8)recent.pop();renderRecent()}
+function renderRecent(){const w=$("recent");w.innerHTML="";if(!recent.length){w.innerHTML='<span class="empty">Aucune cible confirmée.</span>';return}recent.forEach(x=>{const s=document.createElement("span");s.className=`pill ${x.kind==="generic"?"generic":""}`;s.textContent=x.kind==="brand"?`${x.label} probable`:"Rando/trail";w.appendChild(s)})}
+async function scan(test=false){if(!classifier||(!running&&!test))return;const wasPaused=paused;if(test)paused=true;if(paused&&!test)return;const start=performance.now(),r=test?{id:"TEST CENTRE",x:.18,y:.13,w:.64,h:.72}:nextRegion();currentRect=r;drawRect();$("zone").textContent=r.id;if(!test){cycle++;$("cycle").textContent=cycle}setState("ANALYSE",r.id,"live");try{const x=await analyze(r);if(x&&stable(r,x))fire(x);const ms=Math.round(performance.now()-start);$("time").textContent=ms<1000?`${ms} ms`:`${(ms/1000).toFixed(1)} s`;setState("RADAR ACTIF",`${x?.label||"aucune cible"} · ${Math.round((x?.brandScore||0)*100)}%`,"live");return x}catch(e){console.error(e);setState("ERREUR ANALYSE",String(e?.message||e).slice(0,60),"err")}finally{if(test)paused=wasPaused}}
+function schedule(d=650){clearTimeout(timer);if(!running||paused||!classifier)return;timer=setTimeout(async()=>{await scan();schedule(650)},d)}
+async function startCamera(){const b=$("startBtn");b.disabled=true;status("Demande caméra…");if(!isSecureContext){status("HTTPS requis.","err");b.disabled=false;return}if(!navigator.mediaDevices?.getUserMedia){status("Accès caméra indisponible.","err");b.disabled=false;return}await ensureAudio();try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}});video.srcObject=stream;await video.play();running=true;$("startScreen").classList.add("hidden");$("top").classList.remove("hidden");$("bottom").classList.remove("hidden");$("testTools").classList.remove("hidden");resize();setState("CAMÉRA OK","chargement IA","live");await loadAi()}catch(e){console.error(e);status(e?.name==="NotAllowedError"?"Caméra refusée dans Chrome.":"Erreur caméra : "+(e?.name||e),"err");b.disabled=false}}
+function pause(){paused=!paused;$("pauseBtn").textContent=paused?"Reprendre":"Pause";if(paused){clearTimeout(timer);setState("PAUSE","caméra ouverte")}else{setState("RADAR ACTIF","reprise","live");schedule(100)}}
+$("startBtn").addEventListener("click",startCamera);$("pauseBtn").addEventListener("click",pause);$("settingsBtn").addEventListener("click",()=>$("settings").showModal());$("retryAi").addEventListener("click",()=>loadAi());$("testCenter").addEventListener("click",async()=>{debugOn=true;$("toggleDebug").textContent="Debug OFF";$("debugBox").classList.remove("hidden");clearTimeout(timer);await scan(true);if(!paused)schedule(500)});$("toggleDebug").addEventListener("click",()=>{debugOn=!debugOn;$("toggleDebug").textContent=debugOn?"Debug OFF":"Debug ON";$("debugBox").classList.toggle("hidden",!(debugOn||prefs().debug))});
+["outdoorThreshold","brandThreshold","margin"].forEach(id=>$(id).addEventListener("input",()=>{updateOutputs();savePrefs()}));document.querySelectorAll("#settings input,#settings select").forEach(x=>x.addEventListener("change",()=>{savePrefs();drawRect()}));addEventListener("resize",resize);document.addEventListener("visibilitychange",()=>{if(document.hidden&&running&&!paused)pause()});loadPrefs();
+})();
+</script>
+</body>
+</html>
